@@ -10859,67 +10859,68 @@
             function Toggle:SetValue(Value)
                 Toggle.Value = Value
                 Toggle:Display()
-    
+
                 for _, Addon in Toggle.Addons do
                     if Addon.Type == "KeyPicker" and Addon.SyncToggleState then
                         Addon.Toggled = Toggle.Value
                         Addon:Update()
                     end
                 end
-    
+
                 if not Toggle.Disabled then
                     Library:UpdateDependencyBoxes()
                 end
-    
+
                 if not Toggle.AnyKeyPickerPicking then
                     Toggle:RunChanged()
                 end
+                if Library._OnToggleStateChanged then pcall(Library._OnToggleStateChanged, Library, Toggle) end
             end
-    
+
             function Toggle:SetDisabled(Disabled: boolean)
                 Toggle.Disabled = Disabled
-    
+
                 if Toggle.TooltipTable then
                     Toggle.TooltipTable.Disabled = Toggle.Disabled
                 end
-    
+
                 Library:UpdateAddons(Toggle)
-    
+
                 Button.Active = not Toggle.Disabled
                 Toggle:Display()
-    
+
                 Library:UpdateDependencyBoxes()
             end
-    
+
             function Toggle:SetVisible(Visible: boolean)
                 Toggle.Visible = Visible
-    
+
                 Button.Visible = Toggle.Visible
                 Groupbox:Resize()
             end
-    
+
             function Toggle:SetText(Text: string)
                 Toggle.Text = Text
                 Label.Text = Text
             end
-    
+
             table.insert(Toggle.Connections, Button.MouseButton2Click:Connect(function()
                 if typeof(Idx) == "string" then
                     Library:StartQuickBind("Toggle", Idx, tostring(Toggle.Text))
                 end
             end))
-    
+
             table.insert(Toggle.Connections, Button.MouseButton1Click:Connect(function()
                 if Toggle.Disabled then
                     return
                 end
-    
+
                 Toggle:SetValue(not Toggle.Value)
                 if typeof(Idx) == "string" and Library.OnUserToggle then
                 	pcall(Library.OnUserToggle, Idx, Toggle.Value)
                 end
             end))
-    
+
             if typeof(Toggle.Tooltip) == "string" or typeof(Toggle.DisabledTooltip) == "string" then
                 Toggle.TooltipTable = Library:AddTooltip(Toggle.Tooltip, Toggle.DisabledTooltip, Button)
                 Toggle.TooltipTable.Disabled = Toggle.Disabled
@@ -10939,28 +10940,29 @@
     
             Toggle.Holder = Button
             table.insert(Groupbox.Elements, Toggle)
-    
+
             Toggle.Default = Toggle.Value
-    
+
             Toggles[Idx] = Toggle
-    
+            if Library._RegisterToggleStar then Library:_RegisterToggleStar(Toggle, Button) end
+
             function Toggle:Destroy()
                 Toggle.Destroyed = true
-    
+
                 if Toggle.Connections then
                     for _, Connection in Toggle.Connections do
                         Connection:Disconnect()
                     end
                 end
-    
+
                 if Toggle.TooltipTable then
                     Toggle.TooltipTable:Destroy()
                 end
-    
+
                 if Button then
                     Button:Destroy()
                 end
-    
+
                 if Toggle.Addons then
                     for Index = #Toggle.Addons, 1, -1 do
                         local Addon = table.remove(Toggle.Addons, Index)
@@ -10969,19 +10971,19 @@
                         end
                     end
                 end
-    
+
                 local ElemIdx = table.find(Groupbox.Elements, Toggle)
                 if ElemIdx then
                     table.remove(Groupbox.Elements, ElemIdx)
                 end
-    
+
                 Groupbox:Resize()
                 Toggles[Idx] = nil
             end
-    
+
             return Toggle
         end
-    
+
         function Funcs:AddToggle(Idx, Info)
             if self.Destroyed then return nil end
     
@@ -11206,23 +11208,24 @@
             function Toggle:SetValue(Value)
                 Toggle.Value = Value
                 Toggle:Display()
-    
+
                 for _, Addon in Toggle.Addons do
                     if Addon.Type == "KeyPicker" and Addon.SyncToggleState then
                         Addon.Toggled = Toggle.Value
                         Addon:Update()
                     end
                 end
-    
+
                 if not Toggle.Disabled then
                     Library:UpdateDependencyBoxes()
                 end
-    
+
                 if not Toggle.AnyKeyPickerPicking then
                     Toggle:RunChanged()
                 end
+                if Library._OnToggleStateChanged then pcall(Library._OnToggleStateChanged, Library, Toggle) end
             end
-    
+
             function Toggle:SetDisabled(Disabled: boolean)
                 Toggle.Disabled = Disabled
     
@@ -11324,14 +11327,15 @@
     
             Toggle.Holder = Button
             table.insert(Groupbox.Elements, Toggle)
-    
+
             Toggle.Default = Toggle.Value
-    
+
             Toggles[Idx] = Toggle
-    
+            if Library._RegisterToggleStar then Library:_RegisterToggleStar(Toggle, Button) end
+
             function Toggle:Destroy()
                 Toggle.Destroyed = true
-    
+
                 if Toggle.Connections then
                     for _, Connection in Toggle.Connections do
                         Connection:Disconnect()
@@ -21168,6 +21172,7 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
             })
             New("UIListLayout", {
                 Padding = UDim.new(0, TabButtonsStyle.Gap),
+                SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = Tabs,
             })
             New("UIPadding", {
@@ -22461,21 +22466,16 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                 Parent = Shine,
             })
     
+            -- Fable spec 2.2: aktywny tab = JEDEN lewy indicator 3x22 Metal (TabIndicator wyzej).
+            -- Oasis Nebula Pill (legacy) usuniety 2026-10-18 - duplikowal akcent na aktywnym tabie.
+            -- Zachowuje Pill referencje jako niewidoczna ramke, zeby PaintHover tween nie wybuchl.
             local Pill = New("Frame", {
                 AnchorPoint = Vector2.new(0, 0.5),
-                BackgroundColor3 = "WhiteColor",
+                BackgroundTransparency = 1,
                 Position = UDim2.new(0, -TabButtonsStyle.Padding, 0.5, 0),
-                Size = UDim2.fromOffset(4, 0),
+                Size = UDim2.fromOffset(0, 0),
+                Visible = false,
                 Parent = TabButton,
-            })
-            New("UICorner", {
-                CornerRadius = UDim.new(0, 2),
-                Parent = Pill,
-            })
-            New("UIGradient", {
-                Color = GetNebulaSequence,
-                Rotation = 90,
-                Parent = Pill,
             })
     
             local Badge = New("Frame", {
@@ -22610,9 +22610,7 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                 TweenService:Create(HoverStroke, Info, {
                     Transparency = if Hovering then 0.55 elseif Entry.Active and Entry.Hovering then 0.35 else 1,
                 }):Play()
-                TweenService:Create(Pill, TweenInfo.new(0.24, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                    Size = UDim2.fromOffset(4, if Entry.Active then 22 elseif Entry.Hovering then 10 else 0),
-                }):Play()
+                -- Pill tween usuniety 2026-10-18 (Fable spec 2.2 - jeden Metal indicator na aktywnym tabie).
     
                 if TabLabel.Visible then
                     TweenService:Create(TabLabel, Info, {
@@ -22721,7 +22719,9 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
             local Description = nil
             local Tooltip = nil
             local Order = nil
-    
+            local Workflow = nil
+            local Primary = nil
+
             if select("#", ...) == 1 and typeof(...) == "table" then
                 local Info = select(1, ...)
                 Name = Info.Name or "Tab"
@@ -22729,16 +22729,25 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                 Description = Info.Description
                 Tooltip = Info.Tooltip
                 Order = Info.Order
+                Workflow = Info.Workflow
+                Primary = Info.Primary
             else
                 Name = select(1, ...)
                 Icon = select(2, ...)
                 Description = select(3, ...)
                 Order = select(4, ...)
             end
-    
+
+            -- Phase 4: Workflow sort (setup -> run -> monitor -> deep -> share)
+            local WorkflowPriority = {
+                setup = 1, run = 2, monitor = 3, deep = 4, share = 5,
+            }
+            local wf = (typeof(Workflow) == "string") and string.lower(Workflow) or "deep"
+            local wPrio = WorkflowPriority[wf] or 4
             if not tonumber(Order) then
                 Order = #Tabs:GetChildren()
             end
+            Order = wPrio * 1000 + tonumber(Order)
     
             local TabButton: TextButton
             local TabIndicator
@@ -22769,6 +22778,7 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                     CanvasSize = UDim2.fromScale(0, 0),
                     ScrollBarImageTransparency = 1,
                     ScrollBarThickness = 0,
+                    ScrollingEnabled = false,
                     Size = UDim2.new(0.5, -3, 1, 0),
                     Parent = TabContainer,
                 })
@@ -22804,6 +22814,7 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                     Position = UDim2.fromScale(1, 0),
                     ScrollBarImageTransparency = 1,
                     ScrollBarThickness = 0,
+                    ScrollingEnabled = false,
                     Size = UDim2.new(0.5, -3, 1, 0),
                     Parent = TabContainer,
                 })
@@ -22861,7 +22872,74 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                 Tabboxes = {},
                 DependencyGroupboxes = {},
             }
-    
+
+            -- Phase 2: Leaf page-flip (book model) - default single page, backward-compat.
+            -- Finisher 2026-10-19: pages wrapped in CanvasGroup Container for 0.4s Quint flip.
+            local function MakePageContainer()
+                return New("CanvasGroup", {
+                    AnchorPoint = Vector2.new(0, 0.5),
+                    BackgroundTransparency = 1,
+                    GroupTransparency = 0,
+                    Position = UDim2.new(0, 0, 0.5, 0),
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Rotation = 0,
+                    Visible = true,
+                    Parent = TabContainer,
+                })
+            end
+            local Page1Container = MakePageContainer()
+            TabLeft.Parent = Page1Container
+            TabRight.Parent = Page1Container
+            Tab.Pages = { { Container = Page1Container, Left = TabLeft, Right = TabRight } }
+            Tab.CurrentBuildPage = 1
+            Tab.CurrentDisplayPage = 1
+            Tab._flipping = false
+            Tab._pageRestored = false
+            Tab.Workflow = wf
+            Tab.Primary = Primary == true
+            local function GetBuildTarget(Side)
+                local page = Tab.Pages[Tab.CurrentBuildPage] or Tab.Pages[1]
+                return (Side == 1) and page.Left or page.Right
+            end
+            Tab._GetBuildTarget = GetBuildTarget
+            Tab._MakePageContainer = MakePageContainer
+            -- Finisher 2026-10-19: per-tab constellation layer (toggle stars + lines to CORVUS anchors).
+            local ConstellationLayer = New("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.fromScale(1, 1),
+                ZIndex = 0,
+                Visible = true,
+                Parent = TabContainer,
+            })
+            Tab.ConstellationLayer = ConstellationLayer
+            Tab._toggleStars = {}
+            -- Fixed CORVUS-like anchor points scaled to layer (same % as window Starfield pattern).
+            Tab._corvusAnchors = {
+                { 0.84 * 1.0, 0.66 - 0.14 * 1.0 },   -- Alchiba-ish
+                { 0.84 * 0.98, 0.66 - 0.14 * 0.76 }, -- Minkar
+                { 0.84 * 0.90, 0.66 - 0.14 * 0.16 }, -- Gienah
+                { 0.84 * 0.72, 0.66 - 0.14 * 0.04 }, -- Algorab
+                { 0.84 * 0.65, 0.66 - 0.14 * 0.84 }, -- Kraz
+                { 0.84 * 0.68, 0.66 - 0.14 * 0.00 }, -- Eta
+            }
+            -- Visualize anchors so toggle lines terminate on something user can see.
+            for _, Pt in Tab._corvusAnchors do
+                local Dot = New("Frame", {
+                    BackgroundColor3 = function()
+                        return Color3.new(1, 1, 1):Lerp(Library.Scheme.AccentColor, 0.5)
+                    end,
+                    BackgroundTransparency = 0.5,
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.fromScale(Pt[1], Pt[2]),
+                    Size = UDim2.fromOffset(3, 3),
+                    ZIndex = 0,
+                    Parent = ConstellationLayer,
+                })
+                New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Dot })
+                Library:AddToRegistry(Dot, { BackgroundColor3 = "AccentColor" })
+            end
+            if Library.RegisterTab then Library:RegisterTab(Tab) end
+
             local WarningBoxHolder = New("Frame", {
                 AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundTransparency = 1,
@@ -23004,9 +23082,12 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
     
             function Tab:RefreshSides()
                 local Offset = WarningBoxHolder.Visible and WarningBox.Size.Y.Offset + 8 or 0
-                for _, Side in Tab.Sides do
-                    Side.Position = UDim2.new(Side.Position.X.Scale, 0, 0, Offset)
-                    Side.Size = UDim2.new(0.5, -3, 1, -Offset)
+                local PagerH = (Tab._pagerFrame and Tab._pagerFrame.Visible) and 22 or 0
+                for _, page in Tab.Pages do
+                    for _, Side in { page.Left, page.Right } do
+                        Side.Position = UDim2.new(Side.Position.X.Scale, 0, 0, Offset)
+                        Side.Size = UDim2.new(0.5, -3, 1, -Offset - PagerH)
+                    end
                 end
             end
     
@@ -23034,7 +23115,287 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
     
                 Tab:RefreshSides()
             end
-    
+
+            -- Phase 2: Leaf page-flip helpers
+            local function CreatePageSide(IsRight, ParentFrame)
+                local Side = New("ScrollingFrame", {
+                    AnchorPoint = IsRight and Vector2.new(1, 0) or Vector2.new(0, 0),
+                    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                    BackgroundTransparency = 1,
+                    CanvasSize = UDim2.fromScale(0, 0),
+                    Position = IsRight and UDim2.fromScale(1, 0) or UDim2.fromScale(0, 0),
+                    ScrollBarImageTransparency = 1,
+                    ScrollBarThickness = 0,
+                    ScrollingEnabled = false,
+                    Size = UDim2.new(0.5, -3, 1, 0),
+                    Visible = true,
+                    Parent = ParentFrame or TabContainer,
+                })
+                New("UIListLayout", { Padding = UDim.new(0, 2), Parent = Side })
+                New("UIPadding", {
+                    PaddingBottom = UDim.new(0, 2),
+                    PaddingLeft = UDim.new(0, 2),
+                    PaddingRight = UDim.new(0, 2),
+                    PaddingTop = UDim.new(0, 2),
+                    Parent = Side,
+                })
+                return Side
+            end
+
+            function Tab:_EnsurePager()
+                if Tab._pagerFrame then return end
+                local Pager = New("Frame", {
+                    AnchorPoint = Vector2.new(0.5, 1),
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0.5, 0, 1, -2),
+                    Size = UDim2.new(0, 220, 0, 18),
+                    Visible = false,
+                    Parent = TabContainer,
+                })
+                local Layout = New("UIListLayout", {
+                    FillDirection = Enum.FillDirection.Horizontal,
+                    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+                    VerticalAlignment = Enum.VerticalAlignment.Center,
+                    Padding = UDim.new(0, 6),
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Parent = Pager,
+                })
+                local function MakeArrow(Label, Delta, Order)
+                    local Btn = New("TextButton", {
+                        BackgroundTransparency = 1,
+                        Size = UDim2.fromOffset(16, 18),
+                        LayoutOrder = Order,
+                        Text = Label,
+                        TextColor3 = "FontColor",
+                        TextSize = 14,
+                        Font = Enum.Font.BuilderSans,
+                        Parent = Pager,
+                    })
+                    Library:AddToRegistry(Btn, { TextColor3 = "FontColor" })
+                    Btn.MouseButton1Click:Connect(function()
+                        Tab:FlipToPage(Tab.CurrentDisplayPage + Delta)
+                    end)
+                    return Btn
+                end
+                Tab._pagerPrev = MakeArrow("<", -1, 0)
+                local Dots = New("Frame", {
+                    BackgroundTransparency = 1,
+                    LayoutOrder = 1,
+                    Size = UDim2.fromOffset(0, 18),
+                    AutomaticSize = Enum.AutomaticSize.X,
+                    Parent = Pager,
+                })
+                New("UIListLayout", {
+                    FillDirection = Enum.FillDirection.Horizontal,
+                    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+                    VerticalAlignment = Enum.VerticalAlignment.Center,
+                    Padding = UDim.new(0, 8),
+                    Parent = Dots,
+                })
+                Tab._pagerDots = Dots
+                Tab._pagerNext = MakeArrow(">", 1, 2)
+                Tab._pagerFrame = Pager
+            end
+
+            function Tab:_UpdatePager()
+                if #Tab.Pages <= 1 then
+                    if Tab._pagerFrame then Tab._pagerFrame.Visible = false end
+                    return
+                end
+                Tab:_EnsurePager()
+                Tab._pagerFrame.Visible = true
+                for _, Child in Tab._pagerDots:GetChildren() do
+                    if Child:IsA("Frame") then Child:Destroy() end
+                end
+                for i = 1, #Tab.Pages do
+                    local Filled = (i == Tab.CurrentDisplayPage)
+                    local Dot = New("Frame", {
+                        BackgroundColor3 = Filled and "AccentColor" or "OutlineColor",
+                        BackgroundTransparency = Filled and 0 or 0.4,
+                        Size = UDim2.fromOffset(Filled and 8 or 6, Filled and 8 or 6),
+                        LayoutOrder = i,
+                        Parent = Tab._pagerDots,
+                    })
+                    New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Dot })
+                    Library:AddToRegistry(Dot, {
+                        BackgroundColor3 = Filled and "AccentColor" or "OutlineColor",
+                    })
+                    local Btn = New("TextButton", {
+                        BackgroundTransparency = 1,
+                        Size = UDim2.fromScale(1, 1),
+                        Text = "",
+                        Parent = Dot,
+                    })
+                    local idx = i
+                    Btn.MouseButton1Click:Connect(function()
+                        Tab:FlipToPage(idx)
+                    end)
+                end
+                Tab._pagerPrev.TextTransparency = (Tab.CurrentDisplayPage <= 1) and 0.7 or 0
+                Tab._pagerNext.TextTransparency = (Tab.CurrentDisplayPage >= #Tab.Pages) and 0.7 or 0
+            end
+
+            function Tab:AddPageBreak()
+                local Container = Tab._MakePageContainer()
+                Container.Visible = false
+                local NewLeft = CreatePageSide(false, Container)
+                local NewRight = CreatePageSide(true, Container)
+                table.insert(Tab.Pages, { Container = Container, Left = NewLeft, Right = NewRight })
+                Tab.CurrentBuildPage = #Tab.Pages
+                Tab:_UpdatePager()
+                Tab:RefreshSides()
+                return Tab.CurrentBuildPage
+            end
+
+            -- Finisher 2026-10-19: 0.4s Quint page flip animation (Fable spec 4.1).
+            function Tab:FlipToPage(Index)
+                Index = math.clamp(tonumber(Index) or 1, 1, #Tab.Pages)
+                if Index == Tab.CurrentDisplayPage then return end
+                if Tab._flipping then return end
+                local Prev = Tab.CurrentDisplayPage
+                local prevPage = Tab.Pages[Prev]
+                local newPage = Tab.Pages[Index]
+                if not newPage then return end
+                Tab._flipping = true
+                Tab.CurrentDisplayPage = Index
+
+                local forward = Index > Prev
+                local outX = forward and -0.14 or 0.14
+                local inX = forward and 0.14 or -0.14
+                local outRot = forward and -3 or 3
+                local inRot = forward and 3 or -3
+
+                if newPage.Container then
+                    newPage.Container.Rotation = inRot
+                    newPage.Container.Position = UDim2.new(inX, 0, 0.5, 0)
+                    newPage.Container.GroupTransparency = 1
+                    newPage.Container.Visible = true
+                end
+
+                if prevPage and prevPage.Container then
+                    local outInfo = TweenInfo.new(0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+                    TweenService:Create(prevPage.Container, outInfo, {
+                        Rotation = outRot,
+                        Position = UDim2.new(outX, 0, 0.5, 0),
+                        GroupTransparency = 1,
+                    }):Play()
+                end
+
+                task.delay(0.06, function()
+                    if newPage.Container and Tab.CurrentDisplayPage == Index then
+                        local inInfo = TweenInfo.new(0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        TweenService:Create(newPage.Container, inInfo, {
+                            Rotation = 0,
+                            Position = UDim2.new(0, 0, 0.5, 0),
+                            GroupTransparency = 0,
+                        }):Play()
+                    end
+                end)
+
+                task.delay(0.4, function()
+                    if prevPage and prevPage.Container and Tab.CurrentDisplayPage ~= Prev then
+                        prevPage.Container.Visible = false
+                        prevPage.Container.Rotation = 0
+                        prevPage.Container.Position = UDim2.new(0, 0, 0.5, 0)
+                        prevPage.Container.GroupTransparency = 0
+                    end
+                    Tab._flipping = false
+                end)
+
+                Tab:_UpdatePager()
+                -- Persist last page per game+tab (Finisher 2026-10-19)
+                pcall(function()
+                    local gid = tostring((game and game.PlaceId) or (Window and Window.ContextName) or "default")
+                    Library.UserProfile.LastPage = Library.UserProfile.LastPage or {}
+                    Library.UserProfile.LastPage[gid] = Library.UserProfile.LastPage[gid] or {}
+                    Library.UserProfile.LastPage[gid][tostring(Tab.Name)] = Index
+                    if Library.SaveUserProfile then
+                        task.defer(Library.SaveUserProfile, Library)
+                    end
+                end)
+                if Library.OnPageFlipped then Library.OnPageFlipped(Tab, Prev, Index) end
+            end
+
+            -- Finisher 2026-10-19: Mobile swipe (48px threshold).
+            do
+                local SwipeStart = nil
+                local SwipeId = nil
+                Library:GiveSignal(UserInputService.TouchStarted:Connect(function(touch, processed)
+                    if processed or Tab.Destroyed then return end
+                    if Library.ActiveTab ~= Tab then return end
+                    if not Tab.Container or not Tab.Container.Visible then return end
+                    local pos = touch.Position
+                    local tcPos = Tab.Container.AbsolutePosition
+                    local tcSize = Tab.Container.AbsoluteSize
+                    if pos.X < tcPos.X or pos.X > tcPos.X + tcSize.X then return end
+                    if pos.Y < tcPos.Y or pos.Y > tcPos.Y + tcSize.Y then return end
+                    SwipeStart = pos
+                    SwipeId = touch
+                end))
+                Library:GiveSignal(UserInputService.TouchEnded:Connect(function(touch, processed)
+                    if not SwipeStart or touch ~= SwipeId then return end
+                    local pos = touch.Position
+                    local dx = pos.X - SwipeStart.X
+                    local dy = pos.Y - SwipeStart.Y
+                    SwipeStart = nil
+                    SwipeId = nil
+                    if processed then return end
+                    if math.abs(dy) > math.abs(dx) then return end
+                    if math.abs(dx) < 48 then return end
+                    if #Tab.Pages <= 1 then return end
+                    if dx > 0 then
+                        Tab:FlipToPage(Tab.CurrentDisplayPage - 1)
+                    else
+                        Tab:FlipToPage(Tab.CurrentDisplayPage + 1)
+                    end
+                end))
+                -- Finisher 2026-10-19 (owner feedback): mouse wheel = full page flip, 1 tick = 1 flip.
+                -- Debounce przez Tab._flipping (0.4s) - spam scrolling nie overlapuje animacji.
+                Library:GiveSignal(UserInputService.InputChanged:Connect(function(Input, Processed)
+                    if Processed or Tab.Destroyed then return end
+                    if Input.UserInputType ~= Enum.UserInputType.MouseWheel then return end
+                    if Library.ActiveTab ~= Tab then return end
+                    if not Tab.Container or not Tab.Container.Visible then return end
+                    if #Tab.Pages <= 1 then return end
+                    if Tab._flipping then return end
+                    local okPos, mousePos = pcall(UserInputService.GetMouseLocation, UserInputService)
+                    if not okPos or not mousePos then return end
+                    local tcPos = Tab.Container.AbsolutePosition
+                    local tcSize = Tab.Container.AbsoluteSize
+                    if mousePos.X < tcPos.X or mousePos.X > tcPos.X + tcSize.X then return end
+                    if mousePos.Y < tcPos.Y or mousePos.Y > tcPos.Y + tcSize.Y then return end
+                    local delta = Input.Position.Z
+                    if delta > 0 then
+                        Tab:FlipToPage(Tab.CurrentDisplayPage - 1)
+                    elseif delta < 0 then
+                        Tab:FlipToPage(Tab.CurrentDisplayPage + 1)
+                    end
+                end))
+            end
+
+            function Tab:GetPageCount()
+                return #Tab.Pages
+            end
+
+            function Tab:FindControlPage(Flag)
+                local Element = Library.Toggles[Flag] or Library.Options[Flag]
+                if not Element then return nil end
+                local Holder = Element.TextLabel or Element.Button or Element.Container
+                for i, page in Tab.Pages do
+                    local function In(obj)
+                        if not obj then return false end
+                        local p = obj
+                        while p do
+                            if p == page.Left or p == page.Right then return true end
+                            p = p.Parent
+                        end
+                        return false
+                    end
+                    if In(Holder) then return i end
+                end
+                return nil
+            end
+
             local function AddTabbox(self, Info)
                 Info = Library:Validate(Info, Templates.Tabbox)
                 local ParentObj = self
@@ -23052,7 +23413,7 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                     AutomaticSize = Enum.AutomaticSize.Y,
                     BackgroundTransparency = 1,
                     Size = UDim2.fromScale(1, 0),
-                    Parent = if ParentObj.Type == "Groupbox" then ParentObj.Container else (Info.Side == 1 and TabLeft or TabRight),
+                    Parent = if ParentObj.Type == "Groupbox" then ParentObj.Container else GetBuildTarget(Info.Side),
                 })
                 New("UIListLayout", {
                     Padding = UDim.new(0, 6),
@@ -23430,7 +23791,7 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                     AutomaticSize = Enum.AutomaticSize.Y,
                     BackgroundTransparency = 1,
                     Size = UDim2.fromScale(1, 0),
-                    Parent = (Info.Side == 1) and TabLeft or TabRight,
+                    Parent = GetBuildTarget(Info.Side),
                 })
                 New("UIListLayout", {
                     Padding = UDim.new(0, 6),
@@ -23855,11 +24216,11 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                 if Library.ActiveTab == Tab then
                     return
                 end
-    
+
                 if Library.ActiveTab then
                     Library.ActiveTab:Hide()
                 end
-    
+
                 PaintTabEntry(TabEntry, true)
                 if TabIndicator then
                     TweenService:Create(TabIndicator, Library.TweenInfo, {
@@ -23874,16 +24235,39 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                         ImageTransparency = 0,
                     }):Play()
                 end
-    
+
                 if Description or WindowInfo.ShowTabTitle ~= false then
                     Window:ShowTabInfo(Name, Description)
                 end
-    
+
+                -- Finisher 2026-10-19: restore LastPage from UserProfile on first show.
+                if not Tab._pageRestored then
+                    Tab._pageRestored = true
+                    pcall(function()
+                        local gid = tostring((game and game.PlaceId) or (Window and Window.ContextName) or "default")
+                        local gameMap = Library.UserProfile and Library.UserProfile.LastPage and Library.UserProfile.LastPage[gid]
+                        local saved = gameMap and gameMap[tostring(Tab.Name)]
+                        if type(saved) == "number" and saved >= 1 and saved <= #Tab.Pages and saved ~= Tab.CurrentDisplayPage then
+                            local target = Tab.Pages[saved]
+                            local current = Tab.Pages[Tab.CurrentDisplayPage]
+                            if target and target.Container and current and current.Container then
+                                current.Container.Visible = false
+                                target.Container.Visible = true
+                                target.Container.Rotation = 0
+                                target.Container.Position = UDim2.new(0, 0, 0.5, 0)
+                                target.Container.GroupTransparency = 0
+                                Tab.CurrentDisplayPage = saved
+                                Tab:_UpdatePager()
+                            end
+                        end
+                    end)
+                end
+
                 Library:PlayTabAnimation(Tab, true)
                 Tab:RefreshSides()
-    
+
                 Library.ActiveTab = Tab
-    
+
                 if Library.Searching then
                     Library:UpdateSearch(Library.SearchText)
                 end
@@ -24018,12 +24402,60 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                 Tab:Hover(false)
             end)
             TabButton.MouseButton1Click:Connect(Tab.Show)
-    
+
             Library.Tabs[Name] = Tab
-    
+
+            -- Finisher 2026-10-19: workflow visual divider (Metal fade 1px, between buckets).
+            if Window._UpdateWorkflowDividers then
+                Window:_UpdateWorkflowDividers()
+            end
+
             return Tab
         end
-    
+
+        Window._workflowDividers = Window._workflowDividers or {}
+        function Window:_UpdateWorkflowDividers()
+            for _, Div in Window._workflowDividers do
+                if Div and Div.Destroy then pcall(Div.Destroy, Div) end
+            end
+            table.clear(Window._workflowDividers)
+            local buckets = { setup = {}, run = {}, monitor = {}, deep = {}, share = {} }
+            local prios = { setup = 1, run = 2, monitor = 3, deep = 4, share = 5 }
+            for _, T in Library.Tabs do
+                if type(T) == "table" and T.Workflow and T.Button and T.Button.Visible ~= false and not T.Destroyed then
+                    buckets[T.Workflow] = buckets[T.Workflow] or {}
+                    table.insert(buckets[T.Workflow], T)
+                end
+            end
+            local order = { "setup", "run", "monitor", "deep", "share" }
+            for i = 1, #order - 1 do
+                local a = buckets[order[i]]
+                local b = buckets[order[i + 1]]
+                if a and b and #a >= 1 and #b >= 1 then
+                    local Div = New("Frame", {
+                        BackgroundColor3 = function()
+                            return (Library.Colors and Library.Colors.MetalLight) or Library.Scheme.AccentColor
+                        end,
+                        BackgroundTransparency = 0.72,
+                        AnchorPoint = Vector2.new(0.5, 0.5),
+                        Size = UDim2.new(0.6, 0, 0, 1),
+                        LayoutOrder = prios[order[i + 1]] * 1000 - 500,
+                        Parent = Tabs,
+                    })
+                    New("UIGradient", {
+                        Transparency = NumberSequence.new({
+                            NumberSequenceKeypoint.new(0, 1),
+                            NumberSequenceKeypoint.new(0.5, 0),
+                            NumberSequenceKeypoint.new(1, 1),
+                        }),
+                        Parent = Div,
+                    })
+                    Library:AddToRegistry(Div, { BackgroundColor3 = "AccentColor" })
+                    table.insert(Window._workflowDividers, Div)
+                end
+            end
+        end
+
         function Window:AddKeyTab(...)
             local Name = nil
             local Icon = nil
@@ -32451,6 +32883,481 @@ end
 		end)
 	end
 	-- CORVUS-ANTIAFK-END
+
+	-- Phase 2 (Leaf page-flip) + Phase 3 (Command Palette) helpers
+	function Library:FlipToControl(Flag)
+		if typeof(Flag) ~= "string" then return false end
+		local Window = Library.Window
+		if not Window or not Window.Tabs then
+			for _, Tab in next, (Library._AllTabs or {}) do
+				if type(Tab) == "table" and Tab.FindControlPage then
+					local Page = Tab:FindControlPage(Flag)
+					if Page then
+						Tab:Show()
+						Tab:FlipToPage(Page)
+						return true
+					end
+				end
+			end
+			return false
+		end
+		for _, Tab in next, Window.Tabs or {} do
+			if type(Tab) == "table" and Tab.FindControlPage then
+				local Page = Tab:FindControlPage(Flag)
+				if Page then
+					if Tab.Show then Tab:Show() end
+					Tab:FlipToPage(Page)
+					return true
+				end
+			end
+		end
+		return false
+	end
+
+	function Library:RegisterTab(Tab)
+		Library._AllTabs = Library._AllTabs or {}
+		table.insert(Library._AllTabs, Tab)
+	end
+
+	-- Finisher 2026-10-19: per-toggle constellation star + line to nearest CORVUS anchor.
+	local function FindOwningTab(Inst)
+		if not Inst then return nil end
+		local p = Inst.Parent
+		while p do
+			for _, T in pairs(Library.Tabs or {}) do
+				if type(T) == "table" and T.Container == p then return T end
+			end
+			p = p.Parent
+		end
+		return nil
+	end
+
+	function Library:_RegisterToggleStar(Toggle, Button)
+		if not Toggle or not Button then return end
+		task.defer(function()
+			if not Button or not Button.Parent then return end
+			local Tab = FindOwningTab(Button)
+			if not Tab or not Tab.ConstellationLayer or not Tab._toggleStars then return end
+			local Layer = Tab.ConstellationLayer
+			local LayerAbs = Layer.AbsolutePosition
+			local LayerSize = Layer.AbsoluteSize
+			if LayerSize.X < 1 or LayerSize.Y < 1 then return end
+			local BtnAbs = Button.AbsolutePosition
+			local BtnSize = Button.AbsoluteSize
+			-- Toggle center in layer-local scale coords.
+			local cx = (BtnAbs.X + BtnSize.X * 0.5 - LayerAbs.X) / LayerSize.X
+			local cy = (BtnAbs.Y + BtnSize.Y * 0.5 - LayerAbs.Y) / LayerSize.Y
+			if cx < 0 or cx > 1 or cy < 0 or cy > 1 then return end
+			-- Random offset within ~60px circle (scaled to layer).
+			local radiusPxX = math.min(60, LayerSize.X * 0.1) / LayerSize.X
+			local radiusPxY = math.min(60, LayerSize.Y * 0.1) / LayerSize.Y
+			local Seed = (string.byte(tostring(Toggle.Text or "x"), 1) or 7) + (BtnAbs.X % 97)
+			local Rng = Random.new(Seed)
+			local angle = Rng:NextNumber(0, math.pi * 2)
+			local dist = Rng:NextNumber(0.4, 1.0)
+			local sx = math.clamp(cx + math.cos(angle) * radiusPxX * dist, 0.02, 0.98)
+			local sy = math.clamp(cy + math.sin(angle) * radiusPxY * dist, 0.02, 0.98)
+			local Dot = New("Frame", {
+				BackgroundColor3 = function()
+					return Color3.new(1, 1, 1):Lerp(Library.Scheme.AccentColor, 0.45)
+				end,
+				BackgroundTransparency = 0.55,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(sx, sy),
+				Size = UDim2.fromOffset(4, 4),
+				ZIndex = 0,
+				Parent = Layer,
+			})
+			New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Dot })
+			Library:AddToRegistry(Dot, { BackgroundColor3 = "AccentColor" })
+			-- Pick nearest CORVUS anchor by Euclidean distance in layer scale.
+			local anchors = Tab._corvusAnchors or {}
+			local best, bestD = nil, math.huge
+			for _, Pt in anchors do
+				local dx = Pt[1] - sx
+				local dy = Pt[2] - sy
+				local d = dx * dx + dy * dy
+				if d < bestD then bestD = d; best = Pt end
+			end
+			Tab._toggleStars[Toggle] = { Dot = Dot, Anchor = best, Sx = sx, Sy = sy, Line = nil }
+		end)
+	end
+
+	function Library:_OnToggleStateChanged(Toggle)
+		if not Toggle then return end
+		for _, Tab in pairs(Library.Tabs or {}) do
+			if type(Tab) == "table" and Tab._toggleStars and Tab._toggleStars[Toggle] then
+				local Rec = Tab._toggleStars[Toggle]
+				if Toggle.Value == true then
+					if Rec.Line then return end
+					local Layer = Tab.ConstellationLayer
+					if not Layer then return end
+					local LayerSize = Layer.AbsoluteSize
+					if LayerSize.X < 1 or LayerSize.Y < 1 then return end
+					local a = Rec.Anchor
+					if not a then return end
+					-- Build line as a Frame positioned at midpoint, rotated to angle.
+					local sxPx = Rec.Sx * LayerSize.X
+					local syPx = Rec.Sy * LayerSize.Y
+					local axPx = a[1] * LayerSize.X
+					local ayPx = a[2] * LayerSize.Y
+					local dx = axPx - sxPx
+					local dy = ayPx - syPx
+					local mag = math.sqrt(dx * dx + dy * dy)
+					if mag < 2 then return end
+					local midX = (sxPx + axPx) / 2 / LayerSize.X
+					local midY = (syPx + ayPx) / 2 / LayerSize.Y
+					local Line = New("Frame", {
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						BackgroundColor3 = function()
+							return Color3.new(1, 1, 1):Lerp(Library.Scheme.AccentColor, 0.55)
+						end,
+						BackgroundTransparency = 1,
+						Position = UDim2.fromScale(midX, midY),
+						Size = UDim2.fromOffset(math.max(0, mag - 6), 1),
+						Rotation = math.deg(math.atan2(dy, dx)),
+						ZIndex = 0,
+						Parent = Layer,
+					})
+					New("UIGradient", {
+						Transparency = NumberSequence.new({
+							NumberSequenceKeypoint.new(0, 0.4),
+							NumberSequenceKeypoint.new(0.5, 0.1),
+							NumberSequenceKeypoint.new(1, 0.4),
+						}),
+						Parent = Line,
+					})
+					Library:AddToRegistry(Line, { BackgroundColor3 = "AccentColor" })
+					TweenService:Create(Line, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+						BackgroundTransparency = 0.7,
+					}):Play()
+					Rec.Line = Line
+				else
+					if Rec.Line then
+						local LineRef = Rec.Line
+						Rec.Line = nil
+						local Tween = TweenService:Create(LineRef, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+							BackgroundTransparency = 1,
+						})
+						Tween.Completed:Connect(function()
+							if LineRef then LineRef:Destroy() end
+						end)
+						Tween:Play()
+					end
+				end
+				return
+			end
+		end
+	end
+
+	-- Phase 6: User profile (cross-game state: keybinds, palette history, last-tab per game)
+	Library.UserProfile = Library.UserProfile or { Palette = { History = {} }, LastTab = {}, Keybinds = {}, LastPage = {} }
+
+	function Library:LoadUserProfile()
+		local ok, raw = pcall(function()
+			if not isfile or not readfile then return nil end
+			if isfile("Corvus/_user.json") then return readfile("Corvus/_user.json") end
+			return nil
+		end)
+		if not ok or not raw then return false end
+		local ok2, parsed = pcall(HttpService.JSONDecode, HttpService, raw)
+		if ok2 and type(parsed) == "table" then
+			Library.UserProfile.Palette = parsed.Palette or Library.UserProfile.Palette
+			Library.UserProfile.LastTab = parsed.LastTab or Library.UserProfile.LastTab
+			Library.UserProfile.Keybinds = parsed.Keybinds or Library.UserProfile.Keybinds
+			Library.UserProfile.LastPage = parsed.LastPage or Library.UserProfile.LastPage or {}
+			return true
+		end
+		return false
+	end
+
+	function Library:SaveUserProfile()
+		if not writefile or not makefolder then return false end
+		pcall(function()
+			if isfolder and not isfolder("Corvus") then makefolder("Corvus") end
+		end)
+		local ok, json = pcall(HttpService.JSONEncode, HttpService, Library.UserProfile)
+		if not ok then return false end
+		local ok2 = pcall(writefile, "Corvus/_user.json", json)
+		return ok2 == true
+	end
+
+	-- Load profile at library init (safe no-op outside Roblox)
+	pcall(Library.LoadUserProfile, Library)
+
+	-- Phase 3: Command Palette modal (Ctrl+K / "/" shortcut, fuzzy, Enter executes)
+	Library.Palette = Library.Palette or { Open = false }
+
+	local function PaletteFuzzyScore(Query, Text)
+		Query = string.lower(Query)
+		Text = string.lower(Text)
+		if Query == "" then return 1 end
+		if Text == Query then return 10 end
+		if string.sub(Text, 1, #Query) == Query then return 7 end
+		if string.find(Text, Query, 1, true) then return 4 end
+		-- subsequence char match (fuzzy)
+		local qi = 1
+		for i = 1, #Text do
+			if qi > #Query then break end
+			if string.sub(Text, i, i) == string.sub(Query, qi, qi) then
+				qi = qi + 1
+			end
+		end
+		if qi > #Query then return 2 end
+		return 0
+	end
+
+	function Library:GetPaletteItems()
+		local Items = {}
+		local seen = {}
+		local function add(key, label, kind, run)
+			if not label or seen[key] then return end
+			seen[key] = true
+			table.insert(Items, { Key = key, Label = tostring(label), Kind = kind, Run = run })
+		end
+		for _, Cmd in Library:GetCommands() do
+			local nm = Cmd.Name
+			add("cmd:" .. nm, nm, "Command", function() Library:RunCommand(nm) end)
+		end
+		for Idx, Toggle in Library.Toggles do
+			local Text = Toggle.Text or Idx
+			add("tog:" .. tostring(Idx), Text, "Toggle", function()
+				Library:FlipToControl(Idx)
+				if Toggle.SetValue then Toggle:SetValue(not (Toggle.Value == true)) end
+			end)
+		end
+		for Idx, Opt in Library.Options do
+			local Text = Opt.Text or Idx
+			local Kind = Opt.Type or "Option"
+			add("opt:" .. tostring(Idx), Text, Kind, function()
+				Library:FlipToControl(Idx)
+			end)
+		end
+		return Items
+	end
+
+	function Library:OpenCommandPalette()
+		if Library.Palette.Open or Library.Unloaded then return end
+		Library.Palette.Open = true
+		local ScreenGui = Library.ScreenGui or (gethui and gethui()) or game:GetService("CoreGui")
+		local Overlay = Instance.new("Frame")
+		Overlay.Name = "CorvusCommandPalette"
+		Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		Overlay.BackgroundTransparency = 0.4
+		Overlay.BorderSizePixel = 0
+		Overlay.Size = UDim2.fromScale(1, 1)
+		Overlay.ZIndex = 50
+		Overlay.Parent = ScreenGui
+
+		local Modal = Instance.new("Frame")
+		Modal.AnchorPoint = Vector2.new(0.5, 0.5)
+		Modal.BackgroundColor3 = (Library.Scheme and Library.Scheme.BackgroundColor) or Color3.fromRGB(20, 21, 24)
+		Modal.Position = UDim2.fromScale(0.5, 0.5)
+		Modal.Size = UDim2.fromOffset(480, 360)
+		Modal.ZIndex = 51
+		Modal.Parent = Overlay
+		Instance.new("UICorner", Modal).CornerRadius = UDim.new(0, 10)
+		local Stroke = Instance.new("UIStroke", Modal)
+		Stroke.Color = (Library.Scheme and Library.Scheme.OutlineColor) or Color3.fromRGB(62, 64, 70)
+		Stroke.Thickness = 1
+
+		local Input = Instance.new("TextBox")
+		Input.BackgroundTransparency = 1
+		Input.ClearTextOnFocus = false
+		Input.Font = Enum.Font.BuilderSans
+		Input.PlaceholderText = "Search commands, toggles, sliders..."
+		Input.PlaceholderColor3 = Color3.fromRGB(140, 140, 148)
+		Input.Position = UDim2.fromOffset(14, 10)
+		Input.Size = UDim2.new(1, -28, 0, 28)
+		Input.Text = ""
+		Input.TextColor3 = (Library.Scheme and Library.Scheme.FontColor) or Color3.fromRGB(242, 243, 246)
+		Input.TextSize = 16
+		Input.TextXAlignment = Enum.TextXAlignment.Left
+		Input.ZIndex = 52
+		Input.Parent = Modal
+
+		local Underline = Instance.new("Frame", Modal)
+		Underline.BackgroundColor3 = (Library.Scheme and Library.Scheme.OutlineColor) or Color3.fromRGB(62, 64, 70)
+		Underline.BorderSizePixel = 0
+		Underline.Position = UDim2.fromOffset(10, 44)
+		Underline.Size = UDim2.new(1, -20, 0, 1)
+		Underline.ZIndex = 52
+
+		local List = Instance.new("ScrollingFrame")
+		List.BackgroundTransparency = 1
+		List.BorderSizePixel = 0
+		List.CanvasSize = UDim2.new(0, 0, 0, 0)
+		List.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		List.ScrollBarThickness = 2
+		List.Position = UDim2.fromOffset(8, 54)
+		List.Size = UDim2.new(1, -16, 1, -62)
+		List.ZIndex = 52
+		List.Parent = Modal
+		local Layout = Instance.new("UIListLayout", List)
+		Layout.Padding = UDim.new(0, 2)
+		Layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+		local Selected = 1
+		local Results = {}
+		local Rows = {}
+
+		local function RefreshRows()
+			for _, Row in Rows do Row.Frame:Destroy() end
+			table.clear(Rows)
+			for i, item in Results do
+				local isSel = (i == Selected)
+				local Row = Instance.new("TextButton")
+				Row.BackgroundColor3 = isSel and ((Library.Scheme and Library.Scheme.AccentColor) or Color3.fromRGB(232, 237, 246)) or Color3.fromRGB(28, 29, 32)
+				Row.BackgroundTransparency = isSel and 0.85 or 1
+				Row.BorderSizePixel = 0
+				Row.Size = UDim2.new(1, 0, 0, 26)
+				Row.Text = ""
+				Row.LayoutOrder = i
+				Row.ZIndex = 53
+				Row.AutoButtonColor = false
+				Row.Parent = List
+				Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 6)
+				local Label = Instance.new("TextLabel", Row)
+				Label.BackgroundTransparency = 1
+				Label.Font = Enum.Font.BuilderSans
+				Label.Position = UDim2.fromOffset(10, 0)
+				Label.Size = UDim2.new(1, -70, 1, 0)
+				Label.Text = item.Label
+				Label.TextColor3 = (Library.Scheme and Library.Scheme.FontColor) or Color3.fromRGB(242, 243, 246)
+				Label.TextSize = 14
+				Label.TextXAlignment = Enum.TextXAlignment.Left
+				Label.ZIndex = 54
+				local Kind = Instance.new("TextLabel", Row)
+				Kind.AnchorPoint = Vector2.new(1, 0.5)
+				Kind.BackgroundTransparency = 1
+				Kind.Font = Enum.Font.BuilderSans
+				Kind.Position = UDim2.new(1, -10, 0.5, 0)
+				Kind.Size = UDim2.fromOffset(60, 16)
+				Kind.Text = item.Kind
+				Kind.TextColor3 = Color3.fromRGB(140, 140, 148)
+				Kind.TextSize = 12
+				Kind.TextXAlignment = Enum.TextXAlignment.Right
+				Kind.ZIndex = 54
+				Row.MouseButton1Click:Connect(function()
+					Selected = i
+					local sel = Results[Selected]
+					if sel then
+						Library:ClosePalette()
+						if sel.Run then pcall(sel.Run) end
+					end
+				end)
+				table.insert(Rows, { Frame = Row })
+			end
+		end
+
+		local function Refresh()
+			local Query = Input.Text
+			local items = Library:GetPaletteItems()
+			local scored = {}
+			local history = (Library.UserProfile.Palette and Library.UserProfile.Palette.History) or {}
+			local histIdx = {}
+			for i, k in history do histIdx[k] = i end
+			if Query == "" then
+				-- show history first (top), then alphabetical
+				table.sort(items, function(a, b)
+					local ha, hb = histIdx[a.Key], histIdx[b.Key]
+					if ha and not hb then return true end
+					if hb and not ha then return false end
+					if ha and hb then return ha < hb end
+					return a.Label < b.Label
+				end)
+				Results = {}
+				for i = 1, math.min(#items, 20) do table.insert(Results, items[i]) end
+			else
+				for _, it in items do
+					local score = PaletteFuzzyScore(Query, it.Label)
+					if score > 0 then table.insert(scored, { Score = score, It = it }) end
+				end
+				table.sort(scored, function(a, b) return a.Score > b.Score end)
+				Results = {}
+				for i = 1, math.min(#scored, 20) do table.insert(Results, scored[i].It) end
+			end
+			Selected = math.min(Selected, #Results)
+			if Selected < 1 then Selected = 1 end
+			RefreshRows()
+		end
+
+		Input:GetPropertyChangedSignal("Text"):Connect(Refresh)
+		Input.FocusLost:Connect(function(enterPressed)
+			if enterPressed and Results[Selected] then
+				local sel = Results[Selected]
+				-- update history
+				local hist = Library.UserProfile.Palette.History or {}
+				for i = #hist, 1, -1 do
+					if hist[i] == sel.Key then table.remove(hist, i) end
+				end
+				table.insert(hist, 1, sel.Key)
+				while #hist > 10 do table.remove(hist) end
+				Library.UserProfile.Palette.History = hist
+				pcall(Library.SaveUserProfile, Library)
+				Library:ClosePalette()
+				pcall(sel.Run)
+			end
+		end)
+
+		Library.Palette.Overlay = Overlay
+		Library.Palette.Input = Input
+		Library.Palette.Refresh = Refresh
+		Library.Palette.MoveSelection = function(delta)
+			Selected = math.clamp(Selected + delta, 1, math.max(#Results, 1))
+			RefreshRows()
+		end
+
+		task.defer(function()
+			Input:CaptureFocus()
+		end)
+		Refresh()
+	end
+
+	function Library:ClosePalette()
+		if not Library.Palette.Open then return end
+		Library.Palette.Open = false
+		if Library.Palette.Overlay then
+			Library.Palette.Overlay:Destroy()
+			Library.Palette.Overlay = nil
+		end
+	end
+
+	function Library:TogglePalette()
+		if Library.Palette.Open then
+			Library:ClosePalette()
+		else
+			Library:OpenCommandPalette()
+		end
+	end
+
+	-- Global Ctrl+K / "/" listener (focus-aware)
+	pcall(function()
+		local UIS = game:GetService("UserInputService")
+		UIS.InputBegan:Connect(function(Input, Processed)
+			if Library.Unloaded then return end
+			if Input.KeyCode == Enum.KeyCode.K then
+				local Ctrl = UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)
+				if Ctrl and not Processed then
+					Library:TogglePalette()
+				end
+			elseif Input.KeyCode == Enum.KeyCode.Slash and not Processed then
+				local focused = UIS:GetFocusedTextBox()
+				if not focused then
+					Library:OpenCommandPalette()
+				end
+			elseif Input.KeyCode == Enum.KeyCode.Escape and Library.Palette.Open then
+				Library:ClosePalette()
+			elseif Library.Palette.Open then
+				if Input.KeyCode == Enum.KeyCode.Up then
+					if Library.Palette.MoveSelection then Library.Palette.MoveSelection(-1) end
+				elseif Input.KeyCode == Enum.KeyCode.Down then
+					if Library.Palette.MoveSelection then Library.Palette.MoveSelection(1) end
+				end
+			end
+		end)
+	end)
+
 	getgenv().CorvusLibrary = Library
     return Library
     end)()
