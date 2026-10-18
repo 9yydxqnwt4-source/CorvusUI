@@ -367,18 +367,50 @@
         CornerRadius = 10,
 
         IsLightTheme = false,
+        -- Corvus palette + gradients (Fable concept 2026-10-18 sekcja 6). Source of truth.
+        Colors = {
+            RavenVoid     = Color3.fromRGB(7, 7, 9),
+            RavenSlate    = Color3.fromRGB(20, 21, 24),
+            RavenAsh      = Color3.fromRGB(28, 29, 34),
+            RavenOutline  = Color3.fromRGB(62, 64, 70),
+            SilverSmoke   = Color3.fromRGB(110, 115, 126),
+            SilverBrushed = Color3.fromRGB(206, 211, 220),
+            SilverMoon    = Color3.fromRGB(250, 251, 253),
+            SilverInk     = Color3.fromRGB(242, 243, 246),
+            DiscordWhisper= Color3.fromRGB(138, 92, 246),
+            SignalGreen   = Color3.fromRGB(96, 214, 150),
+            SignalAmber   = Color3.fromRGB(224, 179, 90),
+            SignalRed     = Color3.fromRGB(224, 96, 96),
+        },
+        Gradients = {
+            Metal135 = ColorSequence.new({
+                ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
+                ColorSequenceKeypoint.new(0.45, Color3.fromRGB(214, 218, 226)),
+                ColorSequenceKeypoint.new(1.0, Color3.fromRGB(150, 156, 168)),
+            }),
+            GlassTop = NumberSequence.new({
+                NumberSequenceKeypoint.new(0.0, 0.94),
+                NumberSequenceKeypoint.new(0.35, 1.0),
+                NumberSequenceKeypoint.new(1.0, 1.0),
+            }),
+            QuillFade = NumberSequence.new({
+                NumberSequenceKeypoint.new(0.0, 0.0),
+                NumberSequenceKeypoint.new(0.7, 1.0),
+                NumberSequenceKeypoint.new(1.0, 1.0),
+            }),
+        },
         Scheme = {
-            BackgroundColor = Color3.fromRGB(7, 7, 9),
-            MainColor = Color3.fromRGB(20, 21, 24),
-            AccentColor = Color3.fromRGB(232, 237, 246),
-            OutlineColor = Color3.fromRGB(62, 64, 70),
-            FontColor = Color3.fromRGB(242, 243, 246),
+            BackgroundColor = Color3.fromRGB(7, 7, 9),       -- raven-void
+            MainColor = Color3.fromRGB(20, 21, 24),          -- raven-slate
+            AccentColor = Color3.fromRGB(206, 211, 220),     -- silver-brushed (akcent)
+            OutlineColor = Color3.fromRGB(62, 64, 70),       -- raven-outline
+            FontColor = Color3.fromRGB(242, 243, 246),       -- silver-ink
             Font = Font.fromEnum(Enum.Font.BuilderSans),
 
-            RedColor = Color3.fromRGB(255, 92, 100),
-            DestructiveColor = Color3.fromRGB(220, 70, 70),
+            RedColor = Color3.fromRGB(224, 96, 96),          -- signal-red
+            DestructiveColor = Color3.fromRGB(224, 96, 96),
             DarkColor = Color3.new(0, 0, 0),
-            WhiteColor = Color3.new(1, 1, 1),
+            WhiteColor = Color3.fromRGB(250, 251, 253),      -- silver-moon
 
             BackgroundImage = ""
         },
@@ -1918,6 +1950,11 @@
     end
     
     local function GetNebulaSequence()
+        -- Silver vein (Fable 4.2): Metal135 jest JEDYNYM kolorem aktywnosci.
+        -- Uzywany dla slider fill, primary button, aurora stroke, focus ring.
+        if Library.Gradients and Library.Gradients.Metal135 then
+            return Library.Gradients.Metal135
+        end
         return ColorSequence.new(Library.Scheme.AccentColor, GetSecondaryAccent())
     end
     
@@ -3061,17 +3098,33 @@
     end
     
     function Library:MakeLine(Frame: GuiObject, Info)
+        -- "Quill line" (Fable concept sekcja 4.3): kazdy separator to pociagniecie piora,
+        -- nie plaska linia. SilverBrushed + transparency fade 0 -> 1 w 70 % szerokosci.
         local Line = New("Frame", {
             AnchorPoint = Info.AnchorPoint or Vector2.zero,
-            BackgroundColor3 = "OutlineColor",
+            BackgroundColor3 = (Library.Colors and Library.Colors.SilverBrushed) or Color3.fromRGB(206, 211, 220),
+            BackgroundTransparency = 0,
             LayoutOrder = Info.LayoutOrder or 0,
             Position = Info.Position,
             Size = Info.Size,
             ZIndex = Info.ZIndex or Frame.ZIndex,
             Parent = Frame,
         })
-    
+        if Info.Quill ~= false and Library.Gradients and Library.Gradients.QuillFade then
+            New("UIGradient", {
+                Transparency = Library.Gradients.QuillFade,
+                Rotation = Info.QuillRotation or 0,
+                Parent = Line,
+            })
+        end
         return Line
+    end
+    function Library:MakeMetalGradient(Parent, Rotation)
+        return New("UIGradient", {
+            Color = (Library.Gradients and Library.Gradients.Metal135) or ColorSequence.new(Color3.fromRGB(255, 255, 255)),
+            Rotation = Rotation or 135,
+            Parent = Parent,
+        })
     end
     
     function Library:AddOutline(Frame: GuiObject)
@@ -4729,9 +4782,13 @@
     end
     
     local function GetSwitchOnSequence()
+        -- Moon toggle ON (Fable sekcja 3 "Toggle"): tor to Metal135 gradient, nie plaski kolor.
+        if Library.Gradients and Library.Gradients.Metal135 then
+            return Library.Gradients.Metal135
+        end
         return ColorSequence.new(Library.Scheme.AccentColor, GetSecondaryAccent())
     end
-    
+
     local function GetSwitchOffSequence()
         local Main = Library.Scheme.MainColor
         return ColorSequence.new(Library:GetBetterColor(Main, 27), Library:GetBetterColor(Main, 55))
@@ -11042,8 +11099,10 @@
                 CornerRadius = UDim.new(1, 0),
                 Parent = SwitchFill,
             })
+            -- Moon toggle (Fable 4.4): tor ON ma Metal135 kierunek, zawsze ten sam katowo.
             New("UIGradient", {
                 Color = GetSwitchOnSequence,
+                Rotation = 135,
                 Parent = SwitchFill,
             })
     
@@ -11057,6 +11116,13 @@
             })
             New("UICorner", {
                 CornerRadius = UDim.new(1, 0),
+                Parent = Ball,
+            })
+            -- Moon toggle (Fable 4.4): OFF knob = pusty pierscien (nowiu), ON = ciemny dysk na srebrnym niebie.
+            local BallStroke = New("UIStroke", {
+                Color = (Library.Colors and Library.Colors.SilverSmoke) or Color3.fromRGB(110, 115, 126),
+                Thickness = 1.5,
+                Transparency = 1,
                 Parent = Ball,
             })
             local BallScale = New("UIScale", {
@@ -11099,9 +11165,29 @@
                 TweenService:Create(Ball, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                     Position = BallPosition,
                 }):Play()
-    
-                Ball.BackgroundColor3 = Library.Scheme.WhiteColor
-                Library.Registry[Ball].BackgroundColor3 = "WhiteColor"
+
+                -- Moon toggle (Fable 4.4): OFF = pusty pierscien (BackgroundTransparency 1 + stroke),
+                -- ON = ciemny dysk (RavenVoid, bez stroke) na srebrnym Metal torze.
+                if BallStroke then
+                    if Toggle.Value then
+                        Ball.BackgroundColor3 = (Library.Colors and Library.Colors.RavenVoid) or Color3.fromRGB(7, 7, 9)
+                        Ball.BackgroundTransparency = 0
+                        BallStroke.Transparency = 1
+                        Library.Registry[Ball].BackgroundColor3 = function()
+                            return (Library.Colors and Library.Colors.RavenVoid) or Library.Scheme.BackgroundColor
+                        end
+                    else
+                        Ball.BackgroundColor3 = (Library.Colors and Library.Colors.RavenSlate) or Library.Scheme.MainColor
+                        Ball.BackgroundTransparency = 1
+                        BallStroke.Transparency = 0
+                        Library.Registry[Ball].BackgroundColor3 = function()
+                            return (Library.Colors and Library.Colors.RavenSlate) or Library.Scheme.MainColor
+                        end
+                    end
+                else
+                    Ball.BackgroundColor3 = Library.Scheme.WhiteColor
+                    Library.Registry[Ball].BackgroundColor3 = "WhiteColor"
+                end
             end
     
             function Toggle:OnChanged(Func)
@@ -20336,6 +20422,7 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                 BackgroundColor3 = function()
                     return Library:GetBetterColor(Library.Scheme.BackgroundColor, -1)
                 end,
+                BackgroundTransparency = 0.08, -- Fable 2.1 window chrome: raven-void glass, max 0.12 na BSE
                 Name = "Main",
                 Text = "",
                 Position = WindowInfo.Position,
@@ -20620,12 +20707,15 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
                 Parent = BrandBlock,
             })
             New("UIGradient", {
-                Color = function()
-                    return ColorSequence.new(Color3.new(1, 1, 1), Library.Scheme.AccentColor:Lerp(Color3.new(1, 1, 1), 0.25))
-                end,
+                Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0.0, Color3.fromRGB(250, 251, 253)),
+                    ColorSequenceKeypoint.new(0.55, Color3.fromRGB(206, 211, 220)),
+                    ColorSequenceKeypoint.new(1.0, Color3.fromRGB(138, 92, 246)),
+                }),
+                Rotation = 135,
                 Parent = BrandLabel,
             })
-            BrandLabel.TextTransparency = 0.22
+            BrandLabel.TextTransparency = 0.05
             local BrandShine = New("TextLabel", {
                 BackgroundTransparency = 1,
                 FontFace = GetBoldFont,
@@ -21065,7 +21155,11 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
     
             Tabs = New("ScrollingFrame", {
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                BackgroundColor3 = "BackgroundColor",
+                BackgroundColor3 = function()
+                    -- Sidebar (Fable 2.2): raven-slate 0.10 translucency, czytelny ale szklany.
+                    return (Library.Colors and Library.Colors.RavenSlate) or Library.Scheme.MainColor
+                end,
+                BackgroundTransparency = 0.1,
                 CanvasSize = UDim2.fromScale(0, 0),
                 Position = UDim2.fromOffset(0, 49),
                 ScrollBarThickness = 0,
@@ -22280,19 +22374,23 @@ CorvusLoadTimes.community = CorvusLoadTimes.community or (os.clock() - Community
     
             local TabIndicator
             if TabButtonsStyle.Indicator then
+                -- Fable sekcja 2.2: aktywny tab ma lewy indicator 3 x 22 Metal gradient pigulka.
                 TabIndicator = New("Frame", {
-                    AnchorPoint = Vector2.new(1, 0.5),
-                    BackgroundColor3 = "AccentColor",
+                    AnchorPoint = Vector2.new(0, 0.5),
+                    BackgroundColor3 = "WhiteColor",
                     BackgroundTransparency = 1,
-                    Position = UDim2.new(0, -2, 0.5, 0),
+                    Position = UDim2.new(0, 0, 0.5, 0),
                     Size = UDim2.fromOffset(TabButtonsStyle.IndicatorWidth, TabButtonsStyle.IndicatorHeight),
                     Parent = TabButton,
                 })
-    
+
                 New("UICorner", {
                     CornerRadius = UDim.new(1, 0),
                     Parent = TabIndicator,
                 })
+                if Library.MakeMetalGradient then
+                    Library:MakeMetalGradient(TabIndicator, 180)
+                end
             end
     
             local TileSize = WindowInfo.TabTileSize or 30
