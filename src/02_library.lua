@@ -1927,13 +1927,17 @@
     local function GetBoldFont()
         local Current = Library.Scheme.Font
         local Family = typeof(Current) == "Font" and Current.Family or "rbxasset://fonts/families/BuilderSans.json"
-        return Font.new(Family, Enum.FontWeight.Bold)
+        local Ok, Result = pcall(Font.new, Family, Enum.FontWeight.Bold)
+        if Ok then return Result end
+        return typeof(Current) == "Font" and Current or Enum.Font.GothamBold
     end
-    
+
     local function GetMediumFont()
         local Current = Library.Scheme.Font
         local Family = typeof(Current) == "Font" and Current.Family or "rbxasset://fonts/families/BuilderSans.json"
-        return Font.new(Family, Enum.FontWeight.Medium)
+        local Ok, Result = pcall(Font.new, Family, Enum.FontWeight.Medium)
+        if Ok then return Result end
+        return typeof(Current) == "Font" and Current or Enum.Font.GothamMedium
     end
     
     local function GetLinkColor()
